@@ -16,6 +16,7 @@ Example:
 import os
 import argparse
 from datetime import datetime
+from filelock import FileLock
 import json
 import logging
 import requests
@@ -38,27 +39,28 @@ RUN_PREFIX = "TUNE-RL-SERVE"
 def sync_chkpt(ckpt_path, bucket):
     print("Starting checkpoint sync...")
 
-    if not bucket.endswith("/"):
-        bucket += "/"
-
     ts = datetime.now().strftime('%Y%m%d-%H%M')
-    # Tune returns a local checkpoint path at this point.
-    # TODO: we won't need to do this hacky conversion once we
-    # get the cloud checkpoint path directly.
-    ckpt_name = os.path.basename(ckpt_path)
-    storage_path = os.path.dirname(
-        bucket + ckpt_path.strip("/home/ray/ray_results"))
-
     model_path = os.path.join(os.getcwd(), f"ray_model_{ts}")
+
+    remote_ckpt_dir, ckpt_name = os.path.split(ckpt_path)
+    local_ckpt_path = os.path.join(model_path, ckpt_name)
+
+    if os.path.exists(local_ckpt_path):
+        # Already synced, probably by other serving replicas.
+        print("Model checkpoint already exists, skip syncing. ",
+              local_ckpt_path)
+        return local_ckpt_path
+
     if bucket.startswith("gs"):
         sync = ["gsutil", "rsync"]
     elif bucket.startswith("s3"):
         sync = ["aws", "s3", "sync"]
     subprocess.run(["mkdir", "-p", model_path], check=True)
-    subprocess.run(sync + [storage_path, model_path], check=True)
+    subprocess.run(sync + [remote_ckpt_dir, model_path], check=True)
 
-    print("Synced", storage_path, "to", model_path)
-    return os.path.join(model_path, ckpt_name)
+    print("Synced", ckpt_path, "to", model_path)
+
+    return local_ckpt_path
 
 
 @serve.deployment(name="corridor", num_replicas=2)
@@ -73,7 +75,8 @@ class Corridor(object):
             model_path = ckpt_path
         else:
             assert bucket, "Bucket must be provided if not local."
-            model_path = sync_chkpt(ckpt_path, bucket)
+            with FileLock("/tmp/checkpoint.lock"):
+                model_path = sync_chkpt(ckpt_path, bucket)
         agent = ppo.PPOTrainer(config=config, env=env.MysteriousCorridor)
         agent.restore(model_path)
         print("Agent restored")

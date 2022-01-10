@@ -66,12 +66,12 @@ def train(ts: str, mode: str, upload_dir: str) -> str:
         mode="max")
 
     print("Best checkpoint: ")
-    print(results.best_checkpoint)
+    print(results.best_checkpoint.cloud_path)
 
     if upload_dir:
         tmp_file = "/tmp/best_checkpoint.txt"
         with open(tmp_file, "w") as f:
-            f.write(results.best_checkpoint)
+            f.write(results.best_checkpoint.cloud_path)
         best_checkpoint_file = os.path.join(
             upload_dir, run_name, "best_checkpoint.txt")
         print("Saving best checkpoint in: ", best_checkpoint_file)
