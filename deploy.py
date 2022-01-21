@@ -109,7 +109,7 @@ class Corridor(object):
 
 
 def deploy(ckpt_path: str, local: bool, bucket: str = None):
-    serve.start(detached=True)
+    serve.start()
     Corridor.deploy(ckpt_path, local=local, bucket=bucket)
 
     print("Corridor service deployed!")
