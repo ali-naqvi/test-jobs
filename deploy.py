@@ -40,7 +40,7 @@ def sync_chkpt(ckpt_path, bucket):
     print("Starting checkpoint sync...")
 
     ts = datetime.now().strftime('%Y%m%d-%H%M')
-    model_path = os.path.join(os.getcwd(), f"ray_model_{ts}")
+    model_path = os.path.expanduser(f"~/ray_model_{ts}")
 
     remote_ckpt_dir, ckpt_name = os.path.split(ckpt_path)
     local_ckpt_path = os.path.join(model_path, ckpt_name)
