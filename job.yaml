@@ -1,0 +1,4 @@
+entrypoint: python tanmay_test.py
+runtime_env:
+  working_dir: https://github.com/tchordia/test-jobs/archive/refs/heads/master.zip
+  
