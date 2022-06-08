@@ -1,6 +1,6 @@
-entrypoint: python tanmay_test_long.py
+entrypoint: python test_job_failure.py
 runtime_env:
   working_dir: https://github.com/ali-naqvi/test-jobs/archive/refs/heads/master.zip
-name: tanmay_logs_test
+name: test_job_failure
 
 
